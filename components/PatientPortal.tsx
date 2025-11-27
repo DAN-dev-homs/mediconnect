@@ -1,7 +1,8 @@
 
 import React, { useState } from 'react';
 import { Patient, Doctor, AppointmentStatus } from '../types';
-import { Calendar, Clock, Video, FileText, User, LogOut, Search, Stethoscope, Star, ChevronRight, CheckCircle, AlertTriangle, XCircle, BellRing, X, ArrowRight, Activity, AlertCircle as AlertCircleIcon, Phone } from 'lucide-react';
+import { Calendar, Clock, Video, FileText, User, LogOut, Search, Stethoscope, Star, ChevronRight, CheckCircle, AlertTriangle, XCircle, BellRing, X, ArrowRight, Activity, AlertCircle as AlertCircleIcon, Phone, LayoutDashboard, ClipboardList, Menu, Siren } from 'lucide-react';
+import { PatientCard } from './PatientCard';
 
 interface Props {
   patient: Patient;
@@ -10,12 +11,13 @@ interface Props {
   onUpdatePatient: (patient: Patient) => void;
 }
 
-type Tab = 'dashboard' | 'doctors';
+type Tab = 'dashboard' | 'doctors' | 'records';
 
 export const PatientPortal: React.FC<Props> = ({ patient, doctors, onLogout, onUpdatePatient }) => {
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
-  const [selectedDoctorId, setSelectedDoctorId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showEmergencyModal, setShowEmergencyModal] = useState(false);
 
   // Filtrer les médecins
   const filteredDoctors = doctors.filter(d => 
@@ -39,10 +41,10 @@ export const PatientPortal: React.FC<Props> = ({ patient, doctors, onLogout, onU
       alert(`Demande envoyée au ${doctor.name}. Vous recevrez une proposition de créneau bientôt.`);
   };
 
-  const handleEmergency = () => {
-      // Fonction toggle : Si déjà en urgence, on annule. Sinon on active.
+  const handleEmergencyClick = () => {
+      // Fonction toggle : Si déjà en urgence, on annule. Sinon on ouvre la sélection du médecin.
       if (patient.isEmergency) {
-        if (confirm("L'urgence est actuellement active. Voulez-vous ANNULER votre signalement ?")) {
+        if (window.confirm("L'urgence est actuellement active. Voulez-vous ANNULER votre signalement ?")) {
              const updatedPatient: Patient = {
                 ...patient,
                 isEmergency: false
@@ -50,14 +52,23 @@ export const PatientPortal: React.FC<Props> = ({ patient, doctors, onLogout, onU
             onUpdatePatient(updatedPatient);
         }
       } else {
-        if (confirm("Êtes-vous sûr de vouloir signaler une URGENCE ? Cela alertera immédiatement les médecins disponibles.")) {
-            const updatedPatient: Patient = {
-                ...patient,
-                isEmergency: true,
-                appointmentStatus: 'pending' // Force l'apparition dans la liste d'attente
-            };
-            onUpdatePatient(updatedPatient);
-        }
+        setSearchTerm(''); // Reset search pour afficher tous les médecins
+        setShowEmergencyModal(true);
+      }
+  };
+
+  const triggerEmergencyWithDoctor = (doctor: Doctor) => {
+      if (window.confirm(`Confirmez-vous signaler une URGENCE VITALE au ${doctor.name} ?`)) {
+          const updatedPatient: Patient = {
+              ...patient,
+              isEmergency: true,
+              appointmentStatus: 'pending', // Force l'apparition dans la liste d'attente
+              doctorId: doctor.id,
+              doctorName: doctor.name,
+              doctorSpecialty: doctor.specialty
+          };
+          onUpdatePatient(updatedPatient);
+          setShowEmergencyModal(false);
       }
   };
 
@@ -70,7 +81,7 @@ export const PatientPortal: React.FC<Props> = ({ patient, doctors, onLogout, onU
   };
 
   const handleDeclineProposal = () => {
-    if (confirm("Refuser ce créneau ? Vous devrez refaire une demande.")) {
+    if (window.confirm("Refuser ce créneau ? Vous devrez refaire une demande.")) {
         const updatedPatient: Patient = {
             ...patient,
             nextAppointment: undefined,
@@ -110,62 +121,63 @@ export const PatientPortal: React.FC<Props> = ({ patient, doctors, onLogout, onU
            </div>
         </div>
 
-        {/* SECTION NOUVELLE CONSULTATION / URGENCE */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Carte Consultation Classique */}
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:border-medical-300 transition-all group cursor-pointer" onClick={() => setActiveTab('doctors')}>
-                <div className="flex items-center gap-4 mb-4">
-                    <div className="p-3 bg-medical-50 text-medical-600 rounded-xl group-hover:bg-medical-600 group-hover:text-white transition-colors">
-                        <Calendar className="w-8 h-8" />
-                    </div>
-                    <div>
-                        <h3 className="text-xl font-bold text-slate-800">Prendre un rendez-vous</h3>
-                        <p className="text-slate-500 text-sm">Consultation classique ou suivi</p>
-                    </div>
+        {/* SECTION NOUVELLE CONSULTATION UNIFIÉE */}
+        <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
+            <div className="flex items-center gap-3 mb-6">
+                <div className="p-3 bg-medical-50 text-medical-600 rounded-xl">
+                    <Calendar className="w-6 h-6" />
                 </div>
-                <button className="w-full py-3 border-2 border-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition-colors flex items-center justify-center gap-2">
-                    Voir les médecins <ArrowRight className="w-4 h-4" />
-                </button>
+                <div>
+                    <h2 className="text-xl font-bold text-slate-800">Demander un rendez-vous</h2>
+                    <p className="text-slate-500 text-sm">Sélectionnez le mode de consultation adapté à votre besoin</p>
+                </div>
             </div>
 
-            {/* Carte URGENCE */}
             {patient.isEmergency ? (
-                <div className="bg-red-50 p-6 rounded-2xl shadow-sm border-2 border-red-500 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-4 opacity-10">
-                        <Activity className="w-32 h-32 text-red-600" />
+                 <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center animate-pulse">
+                    <div className="flex justify-center mb-4">
+                         <div className="bg-red-100 p-4 rounded-full shadow-sm">
+                            <Activity className="w-8 h-8 text-red-600" />
+                         </div>
                     </div>
-                    <div className="relative z-10">
-                        <div className="flex items-center gap-3 mb-2">
-                            <span className="relative flex h-3 w-3">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-                            </span>
-                            <h3 className="text-xl font-bold text-red-700">URGENCE SIGNALÉE</h3>
-                        </div>
-                        <p className="text-red-600 font-medium mb-4 text-sm">
-                            Votre alerte a été transmise prioritairement. Un médecin va vous contacter via la plateforme dans quelques instants.
-                        </p>
-                        <button 
-                            onClick={handleEmergency}
-                            className="w-full py-3 bg-white text-red-600 border border-red-200 font-bold rounded-xl hover:bg-red-100 transition-colors flex items-center justify-center gap-2"
-                        >
-                            <XCircle className="w-5 h-5" /> Annuler l'alerte
-                        </button>
-                    </div>
-                </div>
+                    <h3 className="text-lg font-bold text-red-700 mb-2">URGENCE ACTIVÉE</h3>
+                    <p className="text-red-600 mb-1 font-medium">Alerte transmise au {patient.doctorName || 'Médecin de garde'}.</p>
+                    <p className="text-red-500 text-sm mb-6">Restez à proximité de votre appareil, le médecin va vous appeler.</p>
+                    <button 
+                        onClick={handleEmergencyClick} 
+                        className="px-6 py-2 bg-white border border-red-200 text-red-600 rounded-lg hover:bg-red-100 font-bold transition-colors flex items-center gap-2 mx-auto"
+                    >
+                        <XCircle className="w-4 h-4" /> Annuler l'alerte
+                    </button>
+                 </div>
             ) : (
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:border-red-300 hover:shadow-red-100 transition-all group cursor-pointer" onClick={handleEmergency}>
-                    <div className="flex items-center gap-4 mb-4">
-                        <div className="p-3 bg-red-50 text-red-500 rounded-xl group-hover:bg-red-600 group-hover:text-white transition-colors">
-                            <AlertTriangle className="w-8 h-8" />
-                        </div>
-                        <div>
-                            <h3 className="text-xl font-bold text-slate-800">Urgence Médicale</h3>
-                            <p className="text-slate-500 text-sm">Besoin d'un avis immédiat</p>
-                        </div>
-                    </div>
-                    <button className="w-full py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 shadow-lg shadow-red-200 transition-colors flex items-center justify-center gap-2">
-                        <Activity className="w-5 h-5" /> SIGNALER UNE URGENCE
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <button 
+                        onClick={() => setActiveTab('doctors')} 
+                        className="flex items-center gap-4 p-5 border border-slate-200 rounded-xl hover:border-medical-500 hover:shadow-md transition-all text-left group bg-white"
+                    >
+                         <div className="bg-slate-50 group-hover:bg-medical-50 p-3 rounded-lg text-slate-600 group-hover:text-medical-600 transition-colors">
+                             <Search className="w-6 h-6" />
+                         </div>
+                         <div>
+                             <span className="block font-bold text-slate-800 text-lg group-hover:text-medical-700">Consulter un praticien</span>
+                             <span className="text-sm text-slate-500">Choisir dans l'annuaire</span>
+                         </div>
+                         <ChevronRight className="ml-auto text-slate-300 group-hover:text-medical-500 w-6 h-6" />
+                    </button>
+
+                    <button 
+                        onClick={handleEmergencyClick} 
+                        className="flex items-center gap-4 p-5 border border-red-100 bg-red-50/30 rounded-xl hover:border-red-500 hover:bg-red-50 hover:shadow-md transition-all text-left group"
+                    >
+                         <div className="bg-red-100 p-3 rounded-lg text-red-600 group-hover:scale-110 transition-transform shadow-sm">
+                             <AlertTriangle className="w-6 h-6" />
+                         </div>
+                         <div>
+                             <span className="block font-bold text-red-700 text-lg">Urgence Médicale</span>
+                             <span className="text-sm text-red-500 font-medium">Signalement immédiat 24/7</span>
+                         </div>
+                         <Activity className="ml-auto text-red-300 group-hover:text-red-500 w-6 h-6" />
                     </button>
                 </div>
             )}
@@ -350,8 +362,8 @@ export const PatientPortal: React.FC<Props> = ({ patient, doctors, onLogout, onU
                   </div>
 
                   <div className="pt-4 border-t">
-                     <button className="w-full py-2 border border-slate-200 text-slate-600 font-medium rounded-lg hover:bg-slate-50 transition-colors">
-                        Mettre à jour mon profil
+                     <button onClick={() => setActiveTab('records')} className="w-full py-2 border border-slate-200 text-slate-600 font-medium rounded-lg hover:bg-slate-50 transition-colors">
+                        Voir dossier complet
                      </button>
                   </div>
                </div>
@@ -415,47 +427,142 @@ export const PatientPortal: React.FC<Props> = ({ patient, doctors, onLogout, onU
       </div>
   );
 
+  const renderSidebar = () => (
+    <aside className={`fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-slate-200 transform transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:inset-auto md:flex flex-col ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="p-6 flex items-center gap-3 border-b border-slate-50">
+           <div className="w-8 h-8 bg-medical-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-medical-200">
+               <Activity className="w-5 h-5" />
+           </div>
+           <span className="font-bold text-xl text-slate-800 tracking-tight">MediConnect</span>
+        </div>
+
+        <nav className="flex-1 px-4 space-y-2 mt-6">
+            <button 
+                onClick={() => { setActiveTab('dashboard'); setMobileMenuOpen(false); }}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${activeTab === 'dashboard' ? 'bg-medical-50 text-medical-600 shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'}`}
+            >
+                <LayoutDashboard className="w-5 h-5" /> Tableau de bord
+            </button>
+            <button 
+                onClick={() => { setActiveTab('doctors'); setMobileMenuOpen(false); }}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${activeTab === 'doctors' ? 'bg-medical-50 text-medical-600 shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'}`}
+            >
+                <Stethoscope className="w-5 h-5" /> Praticiens
+            </button>
+            <button 
+                onClick={() => { setActiveTab('records'); setMobileMenuOpen(false); }}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${activeTab === 'records' ? 'bg-medical-50 text-medical-600 shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'}`}
+            >
+                <ClipboardList className="w-5 h-5" /> Mon Dossier
+            </button>
+        </nav>
+
+        <div className="p-4 border-t bg-slate-50/50">
+            <div className="flex items-center gap-3 mb-4 p-2 bg-white rounded-xl border border-slate-100 shadow-sm">
+                <img src={patient.avatarUrl} alt="User" className="w-10 h-10 rounded-full border border-slate-100" />
+                <div className="overflow-hidden">
+                    <p className="text-sm font-bold text-slate-800 truncate">{patient.name}</p>
+                    <p className="text-xs text-slate-500 truncate">Patient</p>
+                </div>
+            </div>
+            <button onClick={onLogout} className="w-full flex items-center justify-center gap-2 text-sm font-bold text-red-500 hover:bg-red-50 py-3 rounded-xl transition-colors">
+                <LogOut className="w-4 h-4" /> Déconnexion
+            </button>
+        </div>
+    </aside>
+  );
+
   return (
-    <div className="min-h-screen bg-slate-50">
-      <nav className="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center sticky top-0 z-30 shadow-sm">
-        <div className="flex items-center gap-2">
-           <div className="bg-medical-600 p-2 rounded-lg">
-             <User className="w-5 h-5 text-white" />
-           </div>
-           <span className="font-bold text-xl text-slate-800 hidden md:block">Espace Patient</span>
+    <div className="flex h-screen bg-slate-50 overflow-hidden">
+        {/* Mobile Overlay */}
+        {mobileMenuOpen && <div className="fixed inset-0 bg-black/20 z-30 md:hidden" onClick={() => setMobileMenuOpen(false)}></div>}
+        
+        {renderSidebar()}
+
+        <div className="flex-1 flex flex-col h-full relative overflow-hidden">
+            {/* Mobile Header */}
+            <header className="md:hidden bg-white border-b p-4 flex justify-between items-center z-20">
+                 <div className="flex items-center gap-2">
+                    <button onClick={() => setMobileMenuOpen(true)} className="p-2 -ml-2 text-slate-600">
+                        <Menu className="w-6 h-6" />
+                    </button>
+                    <span className="font-bold text-lg text-slate-800">MediConnect</span>
+                 </div>
+                 <div className="w-8 h-8 rounded-full bg-slate-100 overflow-hidden">
+                    <img src={patient.avatarUrl} className="w-full h-full object-cover" />
+                 </div>
+            </header>
+
+            <main className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar scroll-smooth">
+                <div className="max-w-5xl mx-auto h-full">
+                    {activeTab === 'dashboard' && renderDashboard()}
+                    {activeTab === 'doctors' && renderDoctorsList()}
+                    {activeTab === 'records' && (
+                        <div className="animate-in fade-in slide-in-from-right-4 duration-300">
+                            <h1 className="text-2xl font-bold text-slate-900 mb-2">Mon Dossier Médical</h1>
+                            <p className="text-slate-500 mb-6">Consultez et mettez à jour vos informations de santé.</p>
+                            <PatientCard patient={patient} onUpdate={onUpdatePatient} isDoctorView={false} />
+                        </div>
+                    )}
+                </div>
+            </main>
         </div>
 
-        <div className="flex bg-slate-100 p-1 rounded-lg">
-            <button 
-                onClick={() => setActiveTab('dashboard')}
-                className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${activeTab === 'dashboard' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-            >
-                Tableau de bord
-            </button>
-            <button 
-                onClick={() => setActiveTab('doctors')}
-                className={`px-4 py-2 text-sm font-medium rounded-md transition-all ${activeTab === 'doctors' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-            >
-                Praticiens
-            </button>
-        </div>
+        {/* Modal de sélection médecin URGENCE */}
+        {showEmergencyModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-red-900/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden relative border-4 border-red-500">
+                    <div className="bg-red-600 p-6 text-white flex justify-between items-center">
+                        <h2 className="text-xl font-bold flex items-center gap-3">
+                            <Siren className="w-8 h-8 animate-pulse" />
+                            SIGNALEMENT URGENCE
+                        </h2>
+                        <button onClick={() => setShowEmergencyModal(false)} className="hover:bg-red-700 p-2 rounded-lg">
+                            <X className="w-6 h-6" />
+                        </button>
+                    </div>
+                    <div className="p-6 bg-red-50">
+                        <p className="text-red-800 font-bold mb-4 text-center">
+                            Veuillez sélectionner le médecin à qui adresser cette alerte vitale.
+                        </p>
+                        
+                        <div className="relative mb-4">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-red-300" />
+                            <input 
+                                type="text" 
+                                placeholder="Filtrer la liste..." 
+                                className="w-full pl-9 pr-4 py-3 border border-red-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-red-500"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
 
-        <div className="flex items-center gap-4">
-           {/* Note: Le bouton urgence a été déplacé dans le Dashboard principal comme demandé */}
-
-           <div className="text-right hidden md:block">
-              <p className="text-sm font-bold text-slate-800">{patient.name}</p>
-              <p className="text-xs text-slate-500">NSS: {patient.socialSecurityNumber || 'Non renseigné'}</p>
-           </div>
-           <button onClick={onLogout} className="p-2 text-slate-400 hover:text-red-500 transition-colors" title="Déconnexion">
-              <LogOut className="w-5 h-5" />
-           </button>
-        </div>
-      </nav>
-
-      <main className="max-w-6xl mx-auto p-6">
-          {activeTab === 'dashboard' ? renderDashboard() : renderDoctorsList()}
-      </main>
+                        <div className="max-h-[50vh] overflow-y-auto space-y-3 custom-scrollbar">
+                            {filteredDoctors.map(doc => (
+                                <div 
+                                    key={doc.id}
+                                    className="w-full bg-white p-4 rounded-xl border border-red-100 hover:border-red-500 hover:bg-red-50 transition-all flex items-center justify-between group"
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <img src={doc.avatarUrl} alt={doc.name} className="w-12 h-12 rounded-full border-2 border-red-100 group-hover:border-red-400" />
+                                        <div>
+                                            <p className="font-bold text-slate-800">{doc.name}</p>
+                                            <p className="text-xs text-slate-500">{doc.specialty}</p>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        onClick={() => triggerEmergencyWithDoctor(doc)}
+                                        className="bg-red-100 text-red-600 px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 hover:bg-red-600 hover:text-white transition-colors shadow-sm"
+                                    >
+                                        <AlertTriangle className="w-4 h-4" /> ALERTER
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )}
     </div>
   );
 };
