@@ -674,9 +674,15 @@ export const Dashboard: React.FC<Props> = ({ user, patients, onStartConsultation
 
                       <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 flex items-center gap-3">
                           <Clock className="w-5 h-5 text-slate-500" />
-                          <div>
-                              <p className="text-xs font-bold text-slate-400 uppercase">Heure proposée</p>
-                              <p className="text-lg font-bold text-slate-800">{selectedTimeSlot}</p>
+                          <div className="flex-1">
+                              <label className="text-xs font-bold text-slate-400 uppercase block">Heure proposée</label>
+                              <input 
+                                type="time"
+                                className="w-full bg-transparent text-lg font-bold text-slate-800 outline-none border-b border-transparent focus:border-medical-500 transition-colors p-0"
+                                value={selectedTimeSlot || ''}
+                                onChange={(e) => setSelectedTimeSlot(e.target.value)}
+                                required
+                              />
                           </div>
                       </div>
                       

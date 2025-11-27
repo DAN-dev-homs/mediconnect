@@ -1,5 +1,5 @@
 {
-  "name": "MediConnect AI",
+  "name": "MediConnect ",
   "description": "Plateforme de téléconsultation avancée avec assistance IA pour les médecins.",
   "requestFramePermissions": [
     "camera",

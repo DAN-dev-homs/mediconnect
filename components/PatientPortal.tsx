@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Patient, Doctor, AppointmentStatus } from '../types';
-import { Calendar, Clock, Video, FileText, User, LogOut, Search, Stethoscope, Star, ChevronRight, CheckCircle, AlertTriangle, XCircle, BellRing, X, ArrowRight, Activity, AlertCircle as AlertCircleIcon } from 'lucide-react';
+import { Calendar, Clock, Video, FileText, User, LogOut, Search, Stethoscope, Star, ChevronRight, CheckCircle, AlertTriangle, XCircle, BellRing, X, ArrowRight, Activity, AlertCircle as AlertCircleIcon, Phone } from 'lucide-react';
 
 interface Props {
   patient: Patient;
@@ -15,6 +15,13 @@ type Tab = 'dashboard' | 'doctors';
 export const PatientPortal: React.FC<Props> = ({ patient, doctors, onLogout, onUpdatePatient }) => {
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [selectedDoctorId, setSelectedDoctorId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // Filtrer les médecins
+  const filteredDoctors = doctors.filter(d => 
+    d.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    d.specialty.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const handleBookAppointment = (doctor: Doctor) => {
       // Le patient demande un RDV, le statut passe en 'pending' sans heure fixe
@@ -94,7 +101,7 @@ export const PatientPortal: React.FC<Props> = ({ patient, doctors, onLogout, onU
   }
 
   const renderDashboard = () => (
-      <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
+      <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-300">
         <div className="bg-gradient-to-r from-medical-600 to-medical-800 rounded-2xl p-8 text-white shadow-xl relative overflow-hidden">
            <div className="absolute right-0 top-0 w-64 h-64 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl"></div>
            <div className="relative z-10">
@@ -103,30 +110,70 @@ export const PatientPortal: React.FC<Props> = ({ patient, doctors, onLogout, onU
            </div>
         </div>
 
-        {/* SECTION URGENCE */}
-        {patient.isEmergency && (
-            <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl animate-pulse shadow-md">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <BellRing className="w-6 h-6 text-red-600" />
+        {/* SECTION NOUVELLE CONSULTATION / URGENCE */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Carte Consultation Classique */}
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:border-medical-300 transition-all group cursor-pointer" onClick={() => setActiveTab('doctors')}>
+                <div className="flex items-center gap-4 mb-4">
+                    <div className="p-3 bg-medical-50 text-medical-600 rounded-xl group-hover:bg-medical-600 group-hover:text-white transition-colors">
+                        <Calendar className="w-8 h-8" />
+                    </div>
+                    <div>
+                        <h3 className="text-xl font-bold text-slate-800">Prendre un rendez-vous</h3>
+                        <p className="text-slate-500 text-sm">Consultation classique ou suivi</p>
+                    </div>
+                </div>
+                <button className="w-full py-3 border-2 border-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-50 transition-colors flex items-center justify-center gap-2">
+                    Voir les médecins <ArrowRight className="w-4 h-4" />
+                </button>
+            </div>
+
+            {/* Carte URGENCE */}
+            {patient.isEmergency ? (
+                <div className="bg-red-50 p-6 rounded-2xl shadow-sm border-2 border-red-500 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-4 opacity-10">
+                        <Activity className="w-32 h-32 text-red-600" />
+                    </div>
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-3 mb-2">
+                            <span className="relative flex h-3 w-3">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                            </span>
+                            <h3 className="text-xl font-bold text-red-700">URGENCE SIGNALÉE</h3>
+                        </div>
+                        <p className="text-red-600 font-medium mb-4 text-sm">
+                            Votre alerte a été transmise prioritairement. Un médecin va vous contacter via la plateforme dans quelques instants.
+                        </p>
+                        <button 
+                            onClick={handleEmergency}
+                            className="w-full py-3 bg-white text-red-600 border border-red-200 font-bold rounded-xl hover:bg-red-100 transition-colors flex items-center justify-center gap-2"
+                        >
+                            <XCircle className="w-5 h-5" /> Annuler l'alerte
+                        </button>
+                    </div>
+                </div>
+            ) : (
+                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:border-red-300 hover:shadow-red-100 transition-all group cursor-pointer" onClick={handleEmergency}>
+                    <div className="flex items-center gap-4 mb-4">
+                        <div className="p-3 bg-red-50 text-red-500 rounded-xl group-hover:bg-red-600 group-hover:text-white transition-colors">
+                            <AlertTriangle className="w-8 h-8" />
+                        </div>
                         <div>
-                            <h3 className="font-bold text-red-700">Signalement Urgence Activé</h3>
-                            <p className="text-red-600 text-sm">Un médecin a été notifié et va vous contacter très prochainement.</p>
+                            <h3 className="text-xl font-bold text-slate-800">Urgence Médicale</h3>
+                            <p className="text-slate-500 text-sm">Besoin d'un avis immédiat</p>
                         </div>
                     </div>
-                    <button 
-                        onClick={handleEmergency}
-                        className="bg-white border border-red-200 text-red-600 px-3 py-1 rounded-lg text-sm font-bold hover:bg-red-50"
-                    >
-                        Annuler
+                    <button className="w-full py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 shadow-lg shadow-red-200 transition-colors flex items-center justify-center gap-2">
+                        <Activity className="w-5 h-5" /> SIGNALER UNE URGENCE
                     </button>
                 </div>
-            </div>
-        )}
+            )}
+        </div>
 
         {/* SECTION VALIDATION MISES A JOUR */}
         {patient.pendingUpdates && (
-            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 shadow-sm">
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6 shadow-sm animate-in fade-in slide-in-from-bottom-4">
                 <div className="flex items-start gap-4 mb-4">
                     <div className="bg-amber-100 p-2 rounded-full text-amber-600">
                         <FileText className="w-6 h-6" />
@@ -247,13 +294,8 @@ export const PatientPortal: React.FC<Props> = ({ patient, doctors, onLogout, onU
                      </div>
                  ) : (
                      <div className="bg-slate-50 rounded-xl p-8 border border-slate-200 text-center">
-                         <p className="text-slate-500 mb-4">Aucun rendez-vous planifié.</p>
-                         <button 
-                            onClick={() => setActiveTab('doctors')}
-                            className="px-6 py-2 bg-medical-600 text-white rounded-lg font-medium hover:bg-medical-700 transition-colors"
-                         >
-                             Trouver un médecin
-                         </button>
+                         <p className="text-slate-500 mb-4">Aucun rendez-vous à venir.</p>
+                         <p className="text-xs text-slate-400">Utilisez le bouton "Prendre un rendez-vous" ci-dessus pour commencer.</p>
                      </div>
                  )}
               </div>
@@ -331,12 +373,14 @@ export const PatientPortal: React.FC<Props> = ({ patient, doctors, onLogout, onU
                     type="text" 
                     placeholder="Rechercher une spécialité..." 
                     className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-medical-500 w-64"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
                   />
               </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {doctors.map(doc => (
+              {filteredDoctors.map(doc => (
                   <div key={doc.id} className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow group">
                       <div className="flex items-start justify-between mb-4">
                           <img src={doc.avatarUrl} alt={doc.name} className="w-16 h-16 rounded-full border-2 border-slate-100" />
@@ -397,23 +441,7 @@ export const PatientPortal: React.FC<Props> = ({ patient, doctors, onLogout, onU
         </div>
 
         <div className="flex items-center gap-4">
-           {/* Bouton Urgence - Toggle Mode */}
-           {patient.isEmergency ? (
-               <button 
-                    onClick={handleEmergency}
-                    className="bg-white border-2 border-red-500 text-red-600 px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow-sm hover:bg-red-50 transition-all animate-pulse"
-                    title="Désactiver le signalement"
-               >
-                    <XCircle className="w-5 h-5" /> ANNULER URGENCE
-               </button>
-           ) : (
-               <button 
-                    onClick={handleEmergency}
-                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 shadow-lg shadow-red-200 transition-all"
-               >
-                    <AlertTriangle className="w-5 h-5" /> SOS URGENCE
-               </button>
-           )}
+           {/* Note: Le bouton urgence a été déplacé dans le Dashboard principal comme demandé */}
 
            <div className="text-right hidden md:block">
               <p className="text-sm font-bold text-slate-800">{patient.name}</p>
