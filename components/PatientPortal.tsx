@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Patient, Doctor, AppointmentStatus } from '../types';
-import { Calendar, Clock, Video, FileText, User, LogOut, Search, Stethoscope, Star, ChevronRight, CheckCircle, AlertTriangle, XCircle, BellRing, X, ArrowRight, Activity, AlertCircle as AlertCircleIcon, Phone, LayoutDashboard, ClipboardList, Menu, Siren } from 'lucide-react';
+import { Calendar, Clock, Video, FileText, User, LogOut, Search, Stethoscope, Star, ChevronRight, CheckCircle, AlertTriangle, XCircle, BellRing, X, ArrowRight, Activity, AlertCircle as AlertCircleIcon, Phone, LayoutDashboard, ClipboardList, Menu, Siren, Microscope } from 'lucide-react';
 import { PatientCard } from './PatientCard';
 
 interface Props {
@@ -205,9 +205,10 @@ export const PatientPortal: React.FC<Props> = ({ patient, doctors, onLogout, onU
                         let label = key;
                         if(key === 'weight') label = 'Poids';
                         if(key === 'height') label = 'Taille';
-                        if(key === 'bloodType') label = 'Groupe Sanguin';
                         if(key === 'history') label = 'Antécédents';
                         if(key === 'allergies') label = 'Allergies';
+                        if(key === 'temperature') label = 'Température';
+                        if(key === 'bloodPressure') label = 'Tension';
 
                         return (
                             <div key={key} className="flex items-center text-sm border-b border-slate-50 last:border-0 pb-2 last:pb-0">
@@ -315,23 +316,30 @@ export const PatientPortal: React.FC<Props> = ({ patient, doctors, onLogout, onU
               {/* Documents */}
               <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
                   <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-medical-600" /> Documents Récents
+                    <FileText className="w-5 h-5 text-medical-600" /> Documents Médicaux
                  </h2>
                  <div className="space-y-3">
-                    {[1, 2].map((_, i) => (
-                       <div key={i} className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-lg transition-colors border border-transparent hover:border-slate-100">
-                          <div className="flex items-center gap-3">
-                             <div className="bg-blue-50 text-blue-600 p-2 rounded-lg">
-                                <FileText className="w-4 h-4" />
-                             </div>
-                             <div>
-                                <p className="text-sm font-bold text-slate-700">Ordonnance - {i === 0 ? 'Cardiologie' : 'Général'}</p>
-                                <p className="text-xs text-slate-400">Dr. Moreau • Il y a {i + 2} jours</p>
-                             </div>
-                          </div>
-                          <button className="text-sm font-medium text-medical-600 hover:underline">Télécharger</button>
-                       </div>
-                    ))}
+                    {/* Liste des Bons de Labo */}
+                    {patient.labOrders && patient.labOrders.length > 0 ? (
+                        patient.labOrders.map((order, i) => (
+                           <div key={order.id} className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-lg transition-colors border border-transparent hover:border-cyan-100 bg-cyan-50/20">
+                              <div className="flex items-center gap-3">
+                                 <div className="bg-cyan-100 text-cyan-700 p-2 rounded-lg">
+                                    <Microscope className="w-4 h-4" />
+                                 </div>
+                                 <div>
+                                    <p className="text-sm font-bold text-slate-700">Bon d'analyses ({order.tests.length})</p>
+                                    <p className="text-xs text-slate-400">Dr. {order.doctorName} • {new Date(order.date).toLocaleDateString()}</p>
+                                 </div>
+                              </div>
+                              <button className="text-xs font-bold text-cyan-600 bg-cyan-50 px-3 py-1 rounded-full hover:bg-cyan-100">Voir PDF</button>
+                           </div>
+                        ))
+                    ) : null}
+
+                    {(!patient.labOrders || patient.labOrders.length === 0) && (
+                        <p className="text-center text-slate-400 text-sm py-4 italic">Aucun document récent.</p>
+                    )}
                  </div>
               </div>
            </div>
@@ -356,8 +364,8 @@ export const PatientPortal: React.FC<Props> = ({ patient, doctors, onLogout, onU
                             <span className="font-bold text-slate-800">{patient.weight || '-'}</span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-slate-500">Groupe</span>
-                            <span className="font-bold text-slate-800">{patient.bloodType || '-'}</span>
+                            <span className="text-slate-500">Tension</span>
+                            <span className="font-bold text-slate-800">{patient.bloodPressure || '-'}</span>
                         </div>
                   </div>
 

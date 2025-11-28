@@ -1,9 +1,10 @@
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Patient, Message } from '../types';
-import { Mic, MicOff, Video, VideoOff, PhoneOff, MessageSquare, FileText, Bot, Send, User } from 'lucide-react';
+import { Patient, Message, LabOrder } from '../types';
+import { Mic, MicOff, Video, VideoOff, PhoneOff, MessageSquare, FileText, Bot, Send, User, Microscope } from 'lucide-react';
 import { LiveService } from '../services/liveService';
 import { PrescriptionModal } from './PrescriptionModal';
+import { LabOrderModal } from './LabOrderModal';
 import { PatientCard } from './PatientCard';
 
 interface Props {
@@ -20,7 +21,10 @@ export const VideoRoom: React.FC<Props> = ({ patient, onEndCall, onUpdatePatient
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [notes, setNotes] = useState('');
+  
+  // Modals state
   const [showPrescription, setShowPrescription] = useState(false);
+  const [showLabOrder, setShowLabOrder] = useState(false);
 
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const liveServiceRef = useRef<LiveService | null>(null);
@@ -85,6 +89,17 @@ export const VideoRoom: React.FC<Props> = ({ patient, onEndCall, onUpdatePatient
     };
     setMessages([...messages, newMsg]);
     setInputValue('');
+  };
+
+  const handleSaveLabOrder = (order: LabOrder) => {
+      if (onUpdatePatient) {
+          const currentOrders = patient.labOrders || [];
+          const updatedPatient = {
+              ...patient,
+              labOrders: [order, ...currentOrders]
+          };
+          onUpdatePatient(updatedPatient);
+      }
   };
 
   return (
@@ -201,17 +216,24 @@ export const VideoRoom: React.FC<Props> = ({ patient, onEndCall, onUpdatePatient
             {activeTab === 'notes' && (
                 <div className="h-full flex flex-col p-4 animate-in fade-in slide-in-from-right-4 duration-200">
                     <textarea 
-                        className="flex-1 w-full bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm text-slate-700 focus:ring-2 focus:ring-yellow-400 outline-none resize-none font-mono leading-relaxed"
+                        className="flex-1 w-full bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm text-slate-700 focus:ring-2 focus:ring-yellow-400 outline-none resize-none font-mono leading-relaxed mb-4"
                         placeholder="Notes de consultation..."
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
                     ></textarea>
-                    <div className="mt-4">
+                    
+                    <div className="grid grid-cols-2 gap-3">
                          <button 
                             onClick={() => setShowPrescription(true)}
-                            className="w-full py-3 bg-slate-800 text-white rounded-lg hover:bg-slate-700 font-medium flex items-center justify-center gap-2"
+                            className="w-full py-3 bg-slate-800 text-white rounded-lg hover:bg-slate-700 font-medium flex items-center justify-center gap-2 text-sm"
                         >
-                            <FileText className="w-4 h-4" /> Créer Ordonnance
+                            <FileText className="w-4 h-4" /> Ordonnance
+                        </button>
+                        <button 
+                            onClick={() => setShowLabOrder(true)}
+                            className="w-full py-3 bg-cyan-700 text-white rounded-lg hover:bg-cyan-800 font-medium flex items-center justify-center gap-2 text-sm shadow-sm"
+                        >
+                            <Microscope className="w-4 h-4" /> Demander Analyses
                         </button>
                     </div>
                 </div>
@@ -234,6 +256,15 @@ export const VideoRoom: React.FC<Props> = ({ patient, onEndCall, onUpdatePatient
         onClose={() => setShowPrescription(false)}
         patientName={patient.name}
         patientAge={patient.age}
+      />
+
+      <LabOrderModal
+        isOpen={showLabOrder}
+        onClose={() => setShowLabOrder(false)}
+        patientName={patient.name}
+        doctorName="Dr. Moreau" // En prod, viendrait de user context
+        consultationNotes={notes}
+        onSave={handleSaveLabOrder}
       />
     </div>
   );

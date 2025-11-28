@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -24,6 +25,33 @@ export const generatePrescriptionAdvice = async (medicationName: string, patient
   } catch (error) {
     console.error("AI Error:", error);
     return { dosage: "À déterminer", instructions: "Consulter le vidal." };
+  }
+};
+
+export const generateLabSuggestions = async (context: string) => {
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: `Basé sur les notes médicales ou symptomes suivants : "${context}", suggère 3 à 5 analyses biologiques ou examens pertinents.
+      Réponds UNIQUEMENT en JSON avec une liste d'objets contenant: name (nom de l'examen, ex: NFS, Ionogramme), reason (bref motif médical).`,
+      config: {
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              name: { type: Type.STRING },
+              reason: { type: Type.STRING }
+            }
+          }
+        }
+      }
+    });
+    return JSON.parse(response.text || '[]');
+  } catch (error) {
+    console.error("AI Lab Error:", error);
+    return [];
   }
 };
 

@@ -20,6 +20,19 @@ export interface Doctor extends User {
   matricule: string; // Numéro RPPS/License
 }
 
+export interface LabTest {
+  id: string;
+  name: string;
+  reason: string;
+}
+
+export interface LabOrder {
+  id: string;
+  date: string; // ISO String
+  doctorName: string;
+  tests: LabTest[];
+}
+
 export interface Patient extends Omit<User, 'role'> {
   // role est optionnel ici car on utilise Patient pour l'affichage dans le dashboard aussi
   role?: UserRole.PATIENT; 
@@ -29,9 +42,15 @@ export interface Patient extends Omit<User, 'role'> {
   nextAppointment?: string; // Format HH:MM
   appointmentDate?: string; // Format YYYY-MM-DD
   appointmentStatus?: AppointmentStatus;
-  bloodType?: string;
+  
+  // Constantes Vitales
   weight?: string;
   height?: string;
+  temperature?: string;     // T°
+  bloodPressure?: string;   // TA (Tension Artérielle)
+  heartRate?: string;       // FC (Fréquence Cardiaque)
+  respiratoryRate?: string; // FR (Fréquence Respiratoire)
+
   allergies?: string[];
   lastVisit?: string;
   socialSecurityNumber?: string;
@@ -45,6 +64,10 @@ export interface Patient extends Omit<User, 'role'> {
   isEmergency?: boolean;
   // Modifications en attente de validation par le patient
   pendingUpdates?: Partial<Patient>;
+  
+  // Documents médicaux
+  labOrders?: LabOrder[];
+  prescriptions?: Prescription[]; 
 }
 
 export interface Message {

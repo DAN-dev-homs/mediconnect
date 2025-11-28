@@ -35,7 +35,10 @@ export const PatientCard: React.FC<Props> = ({ patient, onUpdate, isDoctorView =
             const updates: Partial<Patient> = {
                 weight: formData.weight,
                 height: formData.height,
-                bloodType: formData.bloodType,
+                temperature: formData.temperature,
+                bloodPressure: formData.bloodPressure,
+                heartRate: formData.heartRate,
+                respiratoryRate: formData.respiratoryRate,
                 history: formData.history,
                 allergies: formData.allergies,
                 notes: formData.notes
@@ -65,14 +68,21 @@ export const PatientCard: React.FC<Props> = ({ patient, onUpdate, isDoctorView =
   // Données à encoder dans le QR Code
   const qrData = JSON.stringify({
     type: "MEDICAL_RECORD",
-    version: "1.0",
+    version: "2.0",
     doctor: "Dr. Moreau",
     lastUpdate: new Date().toISOString(),
     patient: {
       id: formData.id,
       name: formData.name,
       ssn: formData.socialSecurityNumber,
-      bloodType: formData.bloodType,
+      vitals: {
+          weight: formData.weight,
+          height: formData.height,
+          temp: formData.temperature,
+          bp: formData.bloodPressure,
+          hr: formData.heartRate,
+          rr: formData.respiratoryRate
+      },
       allergies: formData.allergies,
       history: formData.history,
       contact: {
@@ -144,7 +154,7 @@ export const PatientCard: React.FC<Props> = ({ patient, onUpdate, isDoctorView =
           <h2 className="text-2xl font-bold text-slate-800 mb-2">{formData.name}</h2>
           <p className="text-center text-slate-600 font-medium mb-4">Dossier Médical Numérique</p>
           <div className="bg-blue-50 text-blue-800 px-4 py-3 rounded-lg text-sm max-w-sm text-center border border-blue-100">
-             <p>Scannez ce code pour partager instantanément les informations vitales, allergies et antécédents avec un autre professionnel de santé.</p>
+             <p>Scannez ce code pour partager instantanément les constantes vitales, allergies et antécédents avec un autre professionnel de santé.</p>
           </div>
         </div>
       ) : (
@@ -244,33 +254,26 @@ export const PatientCard: React.FC<Props> = ({ patient, onUpdate, isDoctorView =
             )}
           </div>
 
-          {/* Constantes Vitales */}
+          {/* Constantes Vitales - NOUVELLE VERSION */}
           <div>
-            <h4 className="text-sm font-bold text-slate-700 mb-3 px-1">Biométrie & Constantes</h4>
-            <div className="grid grid-cols-3 gap-4">
+            <h4 className="text-sm font-bold text-slate-700 mb-3 px-1">Biométrie & Constantes Vitales</h4>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {[
-                    { label: 'Poids', value: formData.weight, field: 'weight', unit: '', color: 'blue' },
-                    { label: 'Taille', value: formData.height, field: 'height', unit: '', color: 'indigo' },
-                    { label: 'Groupe', value: formData.bloodType, field: 'bloodType', unit: '', color: 'pink' }
+                    { label: 'Poids', value: formData.weight, field: 'weight', color: 'blue' },
+                    { label: 'Taille', value: formData.height, field: 'height', color: 'indigo' },
+                    { label: 'T° (Temp.)', value: formData.temperature, field: 'temperature', color: 'orange' },
+                    { label: 'TA (Tension)', value: formData.bloodPressure, field: 'bloodPressure', color: 'red' },
+                    { label: 'FC (Pouls)', value: formData.heartRate, field: 'heartRate', color: 'rose' },
+                    { label: 'FR (Resp.)', value: formData.respiratoryRate, field: 'respiratoryRate', color: 'teal' }
                 ].map((item) => (
                     <div key={item.label} className={`relative p-4 rounded-xl text-center border transition-all ${isEditing ? 'bg-white border-slate-300 shadow-sm' : `bg-white border-slate-100 shadow-sm`}`}>
                         <span className={`block text-xs uppercase font-bold mb-1 text-${item.color}-500`}>{item.label}</span>
                         {isEditing ? (
-                             item.field === 'bloodType' ? (
-                                <select 
-                                    className="w-full text-center font-bold text-slate-700 bg-transparent outline-none border-b border-slate-200 focus:border-medical-500"
-                                    value={item.value as string}
-                                    onChange={(e) => handleChange(item.field as keyof Patient, e.target.value)}
-                                >
-                                    {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(t => <option key={t} value={t}>{t}</option>)}
-                                </select>
-                             ) : (
-                                <input 
-                                    className="w-full text-center font-bold text-slate-700 bg-transparent outline-none border-b border-slate-200 focus:border-medical-500"
-                                    value={item.value as string}
-                                    onChange={(e) => handleChange(item.field as keyof Patient, e.target.value)}
-                                />
-                             )
+                             <input 
+                                className="w-full text-center font-bold text-slate-700 bg-transparent outline-none border-b border-slate-200 focus:border-medical-500"
+                                value={item.value as string || ''}
+                                onChange={(e) => handleChange(item.field as keyof Patient, e.target.value)}
+                            />
                         ) : (
                             <span className="block text-xl font-bold text-slate-800">{item.value || '-'}</span>
                         )}

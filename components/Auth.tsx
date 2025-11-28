@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { UserRole, Doctor, Patient } from '../types';
 import { Stethoscope, User, Lock, Mail, FileBadge, Hash, Activity, ArrowRight, CheckCircle } from 'lucide-react';
@@ -174,19 +175,14 @@ export const Auth: React.FC<Props> = ({ onLogin }) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in slide-in-from-top-4 fade-in">
                    <div className="relative">
                         <FileBadge className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                        <select 
-                            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-medical-500 outline-none transition-all appearance-none text-slate-600"
+                        <input 
+                            type="text" 
+                            placeholder="Votre spécialité (ex: Cardiologue)" 
+                            className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-medical-500 outline-none transition-all"
                             value={specialty}
                             onChange={(e) => setSpecialty(e.target.value)}
                             required
-                        >
-                            <option value="">Spécialité...</option>
-                            <option value="Généraliste">Généraliste</option>
-                            <option value="Cardiologue">Cardiologue</option>
-                            <option value="Dermatologue">Dermatologue</option>
-                            <option value="Pédiatre">Pédiatre</option>
-                            <option value="Psychiatre">Psychiatre</option>
-                        </select>
+                        />
                    </div>
                    <div className="relative">
                         <Hash className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
